@@ -161,18 +161,17 @@ object Repository {
         toggleLike(song)
     }
 
-    /** Star/unstar an album or artist by id, keeping caches in sync. */
-    suspend fun toggleStarItem(id: String, starred: Boolean?): Boolean {
+    /** Star/unstar an album or artist by id, keeping caches in sync. Returns the new state. */
+    suspend fun toggleStarItem(id: String, starred: Boolean): Boolean {
         val api = api ?: return false
-        val nowStarred = starred != null
         val ok = runCatching {
-            if (nowStarred) api.unstar(id) else api.star(id)
+            if (starred) api.unstar(id) else api.star(id)
         }.isSuccess
         if (ok) {
-            albumCache[id]?.let { a -> albumCache[id] = a.copy(starred = if (nowStarred) null else "starred") }
-            artistCache[id]?.let { a -> artistCache[id] = a.copy(starred = if (nowStarred) null else "starred") }
+            albumCache[id]?.let { a -> albumCache[id] = a.copy(starred = if (starred) null else "starred") }
+            artistCache[id]?.let { a -> artistCache[id] = a.copy(starred = if (starred) null else "starred") }
         }
-        return !nowStarred
+        return !starred
     }
 
     suspend fun toggleLike(song: Song) {

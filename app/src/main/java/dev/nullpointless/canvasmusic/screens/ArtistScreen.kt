@@ -28,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,6 +56,7 @@ import dev.nullpointless.canvasmusic.ui.darken
 import dev.nullpointless.canvasmusic.ui.fmtCount
 import dev.nullpointless.canvasmusic.ui.loadState
 import dev.nullpointless.canvasmusic.ui.rememberDominantColor
+import kotlinx.coroutines.launch
 
 @Composable
 fun ArtistScreen(
@@ -78,6 +80,7 @@ fun ArtistScreen(
             val dominant = rememberDominantColor(artUrl)
             val nowItem by PlayerConnection.nowPlaying.collectAsState()
             val playing by PlayerConnection.isPlaying.collectAsState()
+            val scope = rememberCoroutineScope()
 
             Box(Modifier.fillMaxSize()) {
                 Box(
@@ -144,15 +147,17 @@ fun ArtistScreen(
                         ) {
                             PlayFab(
                                 onClick = {
-                                    if (top.isNotEmpty()) {
-                                        PlayerConnection.playSongs(top, 0, contextName = artist.name)
-                                    } else if (artist.album.isNotEmpty()) {
-                                        val first = artist.album.first()
-                                        PlayerConnection.playSongs(
-                                            Repository.album(first.id).song,
-                                            0,
-                                            contextName = artist.name
-                                        )
+                                    scope.launch {
+                                        if (top.isNotEmpty()) {
+                                            PlayerConnection.playSongs(top, 0, contextName = artist.name)
+                                        } else if (artist.album.isNotEmpty()) {
+                                            val first = artist.album.first()
+                                            PlayerConnection.playSongs(
+                                                Repository.album(first.id).song,
+                                                0,
+                                                contextName = artist.name
+                                            )
+                                        }
                                     }
                                 },
                                 playing = playing && nowItem?.mediaMetadata?.artist == artist.name

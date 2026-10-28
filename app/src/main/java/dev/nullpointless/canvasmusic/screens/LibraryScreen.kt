@@ -11,23 +11,21 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -52,20 +50,20 @@ import androidx.compose.ui.unit.sp
 import dev.nullpointless.canvasmusic.api.Album
 import dev.nullpointless.canvasmusic.api.Artist
 import dev.nullpointless.canvasmusic.api.Playlist
+import dev.nullpointless.canvasmusic.api.Song
 import dev.nullpointless.canvasmusic.data.Repository
 import dev.nullpointless.canvasmusic.playback.PlayerConnection
 import dev.nullpointless.canvasmusic.ui.ArtPlaceholder
-import dev.nullpointless.canvasmusic.ui.Bg
 import dev.nullpointless.canvasmusic.ui.CmTypography
 import dev.nullpointless.canvasmusic.ui.EmptySection
 import dev.nullpointless.canvasmusic.ui.ErrorSection
-import dev.nullpointless.canvasmusic.ui.Green
 import dev.nullpointless.canvasmusic.ui.LState
 import dev.nullpointless.canvasmusic.ui.LoadingSection
 import dev.nullpointless.canvasmusic.ui.RemoteImage
 import dev.nullpointless.canvasmusic.ui.TextSecondary
 import dev.nullpointless.canvasmusic.ui.TrackRow
 import dev.nullpointless.canvasmusic.ui.White
+import dev.nullpointless.canvasmusic.ui.loadState
 import kotlinx.coroutines.launch
 
 @Composable
@@ -80,6 +78,16 @@ fun LibraryScreen(
     var reloadKey by remember { mutableStateOf(0) }
     var showLogout by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) { runCatching { Repository.refreshLiked() } }
+    val liked by Repository.liked.collectAsState()
+
+    val playlistsSt = if (tab == 0) loadState(reloadKey) { Repository.playlists() } else null
+    val artistsSt = if (tab == 1) loadState(reloadKey) { Repository.artistsAll() } else null
+    val albumsSt = if (tab == 2) loadState(reloadKey) { Repository.albumsAll() } else null
+
+    val nowItem by PlayerConnection.nowPlaying.collectAsState()
+    val playing by PlayerConnection.isPlaying.collectAsState()
 
     if (showLogout) {
         AlertDialog(
@@ -153,66 +161,72 @@ fun LibraryScreen(
 
         when (tab) {
             0 -> PlaylistsList(
-                reloadKey = reloadKey,
+                st = playlistsSt,
+                liked = liked,
                 onOpenPlaylist = onOpenPlaylist,
                 onOpenLiked = onOpenLiked
             )
-            1 -> ArtistsList(reloadKey, onOpenArtist)
-            2 -> AlbumsList(reloadKey, onOpenAlbum)
-            3 -> SongsList(reloadKey)
+            1 -> ArtistsList(st = artistsSt, onOpenArtist = onOpenArtist)
+            2 -> AlbumsList(st = albumsSt, onOpenAlbum = onOpenAlbum)
+            3 -> LikedSongsList(
+                songs = liked,
+                nowItem = nowItem,
+                playing = playing
+            )
         }
     }
 }
 
-@Composable
-private fun PlaylistsList(
-    reloadKey: Int,
+private fun <T> LazyListScope.stateSection(st: LState<T>?, failedRetry: (() -> Unit)? = null, ready: LazyListScope.(T) -> Unit) {
+    when (st) {
+        null, is LState.Loading -> item(key = "loading-${st.hashCode()}") { LoadingSection() }
+        is LState.Failed -> item(key = "failed") {
+            ErrorSection(st.message, onRetry = failedRetry)
+        }
+        is LState.Ready -> ready(st.data)
+    }
+}
+
+private fun LazyListScope.PlaylistsList(
+    st: LState<List<Playlist>>?,
+    liked: List<Song>? ,
     onOpenPlaylist: (String) -> Unit,
     onOpenLiked: () -> Unit
 ) {
-    when (val st = dev.nullpointless.canvasmusic.ui.loadState(reloadKey) { Repository.playlists() }) {
-        is LState.Loading -> item { LoadingSection() }
-        is LState.Failed -> item { ErrorSection(st.message) { } }
-        is LState.Ready -> {
-            val liked by Repository.liked.collectAsState()
-            LaunchedEffect(Unit) { runCatching { Repository.refreshLiked() } }
-
-            item {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
+    stateSection(st) { playlists ->
+        item(key = "liked-entry") {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onOpenLiked() }
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onOpenLiked() }
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .size(56.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Brush.linearGradient(listOf(Color(0xFF4300EC), Color(0xFF93AAFD)))),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(56.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(
-                                Brush.linearGradient(listOf(Color(0xFF4300EC), Color(0xFF93AAFD)))
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Filled.Favorite, contentDescription = null, tint = White, modifier = Modifier.size(26.dp))
-                    }
-                    Spacer(Modifier.width(12.dp))
-                    Column {
-                        Text("Liked Songs", style = CmTypography.bodyLarge, color = White)
-                        Text(
-                            "Playlist • ${liked?.size ?: 0} songs",
-                            style = CmTypography.bodySmall,
-                            color = TextSecondary
-                        )
-                    }
+                    Icon(Icons.Filled.Favorite, contentDescription = null, tint = White, modifier = Modifier.size(26.dp))
+                }
+                Spacer(Modifier.width(12.dp))
+                Column {
+                    Text("Liked Songs", style = CmTypography.bodyLarge, color = White)
+                    Text(
+                        "Playlist • ${liked?.size ?: 0} songs",
+                        style = CmTypography.bodySmall,
+                        color = TextSecondary
+                    )
                 }
             }
-            if (st.data.isEmpty()) {
-                item { EmptySection("No playlists on this server yet.") }
-            }
-            items(st.data, key = { "pl-${it.id}" }) { playlist ->
-                PlaylistRow(playlist = playlist, onClick = { onOpenPlaylist(playlist.id) })
-            }
+        }
+        if (playlists.isEmpty()) {
+            item(key = "empty-playlists") { EmptySection("No playlists on this server yet.") }
+        }
+        items(playlists, key = { "pl-${it.id}" }) { playlist ->
+            PlaylistRow(playlist = playlist, onClick = { onOpenPlaylist(playlist.id) })
         }
     }
 }
@@ -230,10 +244,7 @@ private fun PlaylistRow(playlist: Playlist, onClick: () -> Unit) {
         if (artUrl != null) {
             RemoteImage(url = artUrl, modifier = Modifier.size(56.dp), shape = RoundedCornerShape(4.dp))
         } else {
-            ArtPlaceholder(
-                modifier = Modifier.size(56.dp),
-                icon = 26.dp
-            )
+            ArtPlaceholder(modifier = Modifier.size(56.dp), icon = 26.dp)
         }
         Spacer(Modifier.width(12.dp))
         Column {
@@ -255,19 +266,17 @@ private fun PlaylistRow(playlist: Playlist, onClick: () -> Unit) {
     }
 }
 
-@Composable
-private fun ArtistsList(reloadKey: Int, onOpenArtist: (String) -> Unit) {
-    when (val st = dev.nullpointless.canvasmusic.ui.loadState(reloadKey) { Repository.artistsAll() }) {
-        is LState.Loading -> item { LoadingSection() }
-        is LState.Failed -> item { ErrorSection(st.message) { } }
-        is LState.Ready -> {
-            val artists = st.data.filter { (it.albumCount ?: 0) > 0 }
-            if (artists.isEmpty()) {
-                item { EmptySection("No artists found.") }
-            }
-            items(artists, key = { "ar-${it.id}" }) { artist ->
-                ArtistListRow(artist = artist, onClick = { onOpenArtist(artist.id) })
-            }
+private fun LazyListScope.ArtistsList(
+    st: LState<List<Artist>>?,
+    onOpenArtist: (String) -> Unit
+) {
+    stateSection(st) { artists ->
+        val withAlbums = artists.filter { (it.albumCount ?: 0) > 0 }
+        if (withAlbums.isEmpty()) {
+            item(key = "empty-artists") { EmptySection("No artists found.") }
+        }
+        items(withAlbums, key = { "ar-${it.id}" }) { artist ->
+            ArtistListRow(artist = artist, onClick = { onOpenArtist(artist.id) })
         }
     }
 }
@@ -310,18 +319,16 @@ private fun ArtistListRow(artist: Artist, onClick: () -> Unit) {
     }
 }
 
-@Composable
-private fun AlbumsList(reloadKey: Int, onOpenAlbum: (String) -> Unit) {
-    when (val st = dev.nullpointless.canvasmusic.ui.loadState(reloadKey) { Repository.albumsAll() }) {
-        is LState.Loading -> item { LoadingSection() }
-        is LState.Failed -> item { ErrorSection(st.message) { } }
-        is LState.Ready -> {
-            if (st.data.isEmpty()) {
-                item { EmptySection("No albums found.") }
-            }
-            items(st.data, key = { "al-${it.id}" }) { album ->
-                AlbumListRow(album = album, onClick = { onOpenAlbum(album.id) })
-            }
+private fun LazyListScope.AlbumsList(
+    st: LState<List<Album>>?,
+    onOpenAlbum: (String) -> Unit
+) {
+    stateSection(st) { albums ->
+        if (albums.isEmpty()) {
+            item(key = "empty-albums") { EmptySection("No albums found.") }
+        }
+        items(albums, key = { "al-${it.id}" }) { album ->
+            AlbumListRow(album = album, onClick = { onOpenAlbum(album.id) })
         }
     }
 }
@@ -360,33 +367,28 @@ private fun AlbumListRow(album: Album, onClick: () -> Unit) {
     }
 }
 
-@Composable
-private fun SongsList(reloadKey: Int) {
-    LaunchedEffect(reloadKey) { runCatching { Repository.refreshLiked() } }
-    val liked by Repository.liked.collectAsState()
-    val nowItem by PlayerConnection.nowPlaying.collectAsState()
-    val playing by PlayerConnection.isPlaying.collectAsState()
-
-    val songs = liked
+private fun LazyListScope.LikedSongsList(
+    songs: List<dev.nullpointless.canvasmusic.api.Song>?,
+    nowItem: androidx.media3.common.MediaItem?,
+    playing: Boolean
+) {
     when {
-        songs == null -> item { LoadingSection() }
-        songs.isEmpty() -> item {
+        songs == null -> item(key = "liked-loading") { LoadingSection() }
+        songs.isEmpty() -> item(key = "liked-empty") {
             EmptySection("Songs you like will appear here.\nTap the heart on any song to save it.")
         }
-        else -> {
-            itemsIndexed(songs, key = { _, s -> "lk-${s.id}" }) { idx, song ->
-                TrackRow(
-                    song = song,
-                    isCurrent = nowItem?.mediaId == song.id,
-                    isPlaying = playing,
-                    showArt = true,
-                    artUrl = Repository.api?.coverArtUrl(song.coverArt ?: song.albumId, 300),
-                    onPlay = {
-                        PlayerConnection.playSongs(songs, idx, contextName = "Liked Songs")
-                    },
-                    onMore = { }
-                )
-            }
+        else -> itemsIndexed(songs, key = { _, s -> "lk-${s.id}" }) { idx, song ->
+            TrackRow(
+                song = song,
+                isCurrent = nowItem?.mediaId == song.id,
+                isPlaying = playing,
+                showArt = true,
+                artUrl = Repository.api?.coverArtUrl(song.coverArt ?: song.albumId, 300),
+                onPlay = {
+                    PlayerConnection.playSongs(songs, idx, contextName = "Liked Songs")
+                },
+                onMore = { }
+            )
         }
     }
 }

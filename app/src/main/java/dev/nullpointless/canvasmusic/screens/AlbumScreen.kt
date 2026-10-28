@@ -199,7 +199,7 @@ fun AlbumScreen(
                                     liked = liked,
                                     onToggle = {
                                         scope.launch {
-                                            liked = Repository.toggleStarItem(album.id, album.starred)
+                                            liked = Repository.toggleStarItem(album.id, album.starred != null)
                                         }
                                     }
                                 )

@@ -83,7 +83,7 @@ class PlaybackService : MediaSessionService() {
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         mediaSession?.player?.let { player ->
-            if (!player.playing) stopSelf()
+            if (!player.isPlaying) stopSelf()
         }
         super.onTaskRemoved(rootIntent)
     }

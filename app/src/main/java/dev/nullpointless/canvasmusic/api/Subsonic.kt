@@ -6,8 +6,8 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonDecodeFromJsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.contentOrNull
@@ -235,7 +235,7 @@ class SubsonicApi(
                 val msg = err?.get("message")?.jsonPrimitive?.contentOrNull ?: "Unknown error"
                 throw ApiException(code, msg)
             }
-            json.jsonDecodeFromJsonElement<T>(root)
+            json.decodeFromJsonElement<T>(root)
         }
     }
 

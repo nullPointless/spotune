@@ -246,7 +246,7 @@ fun <T> loadState(key: Any? = Unit, loader: suspend () -> T): LState<T> =
         } catch (e: Exception) {
             LState.Failed(e.message ?: "Something went wrong")
         }
-    }
+    }.value
 
 // ---------- track row ----------
 
