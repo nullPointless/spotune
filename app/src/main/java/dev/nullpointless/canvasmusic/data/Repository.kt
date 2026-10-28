@@ -150,6 +150,31 @@ object Repository {
         return if (l != null) l.any { it.id == song.id } else song.starred != null
     }
 
+    fun isLikedId(id: String): Boolean {
+        val l = _liked.value ?: return false
+        return l.any { it.id == id }
+    }
+
+    suspend fun toggleLikeId(id: String) {
+        val current = _liked.value ?: return
+        val song = current.find { it.id == id } ?: return
+        toggleLike(song)
+    }
+
+    /** Star/unstar an album or artist by id, keeping caches in sync. */
+    suspend fun toggleStarItem(id: String, starred: Boolean?): Boolean {
+        val api = api ?: return false
+        val nowStarred = starred != null
+        val ok = runCatching {
+            if (nowStarred) api.unstar(id) else api.star(id)
+        }.isSuccess
+        if (ok) {
+            albumCache[id]?.let { a -> albumCache[id] = a.copy(starred = if (nowStarred) null else "starred") }
+            artistCache[id]?.let { a -> artistCache[id] = a.copy(starred = if (nowStarred) null else "starred") }
+        }
+        return !nowStarred
+    }
+
     suspend fun toggleLike(song: Song) {
         val api = api ?: return
         val nowLiked = isLiked(song)

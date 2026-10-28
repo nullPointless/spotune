@@ -35,6 +35,7 @@ object PlayerConnection {
     val shuffleOn = MutableStateFlow(false)
     val repeatMode = MutableStateFlow(Player.REPEAT_MODE_OFF)
     val queue = MutableStateFlow<List<MediaItem>>(emptyList())
+    val currentIndex = MutableStateFlow(0)
     val queueTitle = MutableStateFlow<String?>(null)
 
     fun init(context: Context) {
@@ -68,6 +69,7 @@ object PlayerConnection {
                 nowPlaying.value = item
                 positionMs.value = 0
                 durationMs.value = c.duration.coerceAtLeast(0)
+                currentIndex.value = c.currentMediaItemIndex
             }
 
             override fun onIsPlayingChanged(playing: Boolean) {
@@ -95,6 +97,7 @@ object PlayerConnection {
         isPlaying.value = c.isPlaying
         durationMs.value = c.duration.coerceAtLeast(0)
         positionMs.value = c.currentPosition
+        currentIndex.value = c.currentMediaItemIndex
         shuffleOn.value = c.shuffleModeEnabled
         repeatMode.value = c.repeatMode
         refreshQueue(c)

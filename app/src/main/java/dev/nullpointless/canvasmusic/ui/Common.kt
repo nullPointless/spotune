@@ -31,11 +31,18 @@ import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,6 +61,9 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import dev.nullpointless.canvasmusic.api.Song
+import dev.nullpointless.canvasmusic.data.Repository
+import dev.nullpointless.canvasmusic.playback.PlayerConnection
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 // ---------- formatting ----------
@@ -220,6 +230,24 @@ fun EmptySection(text: String, modifier: Modifier = Modifier) {
     }
 }
 
+// ---------- async loading helper ----------
+
+sealed interface LState<out T> {
+    data object Loading : LState<Nothing>
+    data class Ready<T>(val data: T) : LState<T>
+    data class Failed(val message: String) : LState<Nothing>
+}
+
+@Composable
+fun <T> loadState(key: Any? = Unit, loader: suspend () -> T): LState<T> =
+    produceState<LState<T>>(LState.Loading, key) {
+        value = try {
+            LState.Ready(loader())
+        } catch (e: Exception) {
+            LState.Failed(e.message ?: "Something went wrong")
+        }
+    }
+
 // ---------- track row ----------
 
 @Composable
@@ -233,8 +261,13 @@ fun TrackRow(
     showArt: Boolean = false,
     artUrl: String? = null,
     leading: (@Composable () -> Unit)? = null,
-    trailing: (@Composable () -> Unit)? = null
+    trailing: (@Composable () -> Unit)? = null,
+    onOpenAlbum: ((String) -> Unit)? = null,
+    onOpenArtist: ((String) -> Unit)? = null
 ) {
+    var menuOpen by remember { mutableStateOf(false) }
+    var liked by remember(song.id) { mutableStateOf(Repository.isLiked(song)) }
+    val scope = rememberCoroutineScope()
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
@@ -284,8 +317,48 @@ fun TrackRow(
         if (trailing != null) {
             trailing()
         }
-        IconButton(onClick = onMore, modifier = Modifier.size(36.dp)) {
-            Icon(Icons.Filled.MoreVert, contentDescription = "More", tint = TextSecondary)
+        Box {
+            IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(36.dp)) {
+                Icon(Icons.Filled.MoreVert, contentDescription = "More", tint = TextSecondary)
+            }
+            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                DropdownMenuItem(
+                    text = { Text("Play next", style = CmTypography.bodyMedium, color = White) },
+                    onClick = { menuOpen = false; PlayerConnection.playNext(song) }
+                )
+                DropdownMenuItem(
+                    text = { Text("Add to queue", style = CmTypography.bodyMedium, color = White) },
+                    onClick = { menuOpen = false; PlayerConnection.enqueue(song) }
+                )
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            if (liked) "Remove from Liked Songs" else "Save to Liked Songs",
+                            style = CmTypography.bodyMedium,
+                            color = White
+                        )
+                    },
+                    onClick = {
+                        menuOpen = false
+                        scope.launch {
+                            Repository.toggleLike(song)
+                            liked = Repository.isLiked(song)
+                        }
+                    }
+                )
+                if (song.albumId != null && onOpenAlbum != null) {
+                    DropdownMenuItem(
+                        text = { Text("Go to album", style = CmTypography.bodyMedium, color = White) },
+                        onClick = { menuOpen = false; onOpenAlbum(song.albumId!!) }
+                    )
+                }
+                if (song.artistId != null && onOpenArtist != null) {
+                    DropdownMenuItem(
+                        text = { Text("Go to artist", style = CmTypography.bodyMedium, color = White) },
+                        onClick = { menuOpen = false; onOpenArtist(song.artistId!!) }
+                    )
+                }
+            }
         }
     }
 }
