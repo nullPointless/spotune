@@ -129,7 +129,7 @@ data class Songs(val song: List<Song> = emptyList())
 data class TopSongsRoot(val topSongs: Songs? = null)
 
 @Serializable
-data class RandomSongsRoot(val randomSongs: Songs? = emptyList())
+data class RandomSongsRoot(val randomSongs: Songs? = null)
 
 @Serializable
 data class SongsByGenreRoot(val songsByGenre: Songs? = null)

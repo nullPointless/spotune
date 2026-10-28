@@ -84,6 +84,8 @@ fun SearchScreen(
     var result by remember { mutableStateOf<SearchResult?>(null) }
     var searching by remember { mutableStateOf(false) }
     var genres by remember { mutableStateOf<List<GenreValue>?>(null) }
+    val nowItem by PlayerConnection.nowPlaying.collectAsState()
+    val playing by PlayerConnection.isPlaying.collectAsState()
 
     LaunchedEffect(Unit) {
         genres = runCatching { Repository.genres() }
@@ -200,8 +202,6 @@ fun SearchScreen(
 
                 if (r.song.isNotEmpty()) {
                     item { SectionTitle("Songs", Modifier.padding(top = 22.dp)) }
-                    val nowItem by PlayerConnection.nowPlaying.collectAsState()
-                    val playing by PlayerConnection.isPlaying.collectAsState()
                     itemsIndexed(r.song.take(6)) { idx, song ->
                         dev.nullpointless.canvasmusic.ui.TrackRow(
                             song = song,
