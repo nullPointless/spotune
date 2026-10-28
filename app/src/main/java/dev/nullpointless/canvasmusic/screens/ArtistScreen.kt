@@ -74,7 +74,7 @@ fun ArtistScreen(
         }
         is LState.Ready -> {
             val artist = st.data
-            val artUrl = Repository.api?.coverArtUrl(artist.coverArt ?: artist.id)
+            val artUrl = Repository.artistArtUrl(artist)
             val topSt = loadState(artist.id) { Repository.topSongs(artist.name) }
             val top = (topSt as? LState.Ready)?.data ?: emptyList()
             val dominant = rememberDominantColor(artUrl)

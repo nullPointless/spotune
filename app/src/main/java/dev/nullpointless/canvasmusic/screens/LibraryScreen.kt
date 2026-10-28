@@ -290,7 +290,7 @@ private fun ArtistListRow(artist: Artist, onClick: () -> Unit) {
             .clickable { onClick() }
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
-        val artUrl = Repository.api?.coverArtUrl(artist.coverArt ?: artist.id, 300)
+        val artUrl = Repository.artistArtUrl(artist, 300)
         if (artUrl != null) {
             RemoteImage(url = artUrl, modifier = Modifier.size(52.dp), shape = CircleShape)
         } else {

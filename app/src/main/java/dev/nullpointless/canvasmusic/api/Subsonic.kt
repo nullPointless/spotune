@@ -69,6 +69,7 @@ data class Artist(
     val coverArt: String? = null,
     val albumCount: Long? = null,
     val starred: String? = null,
+    val artistImageUrl: String? = null,
     val album: List<Album> = emptyList()
 )
 

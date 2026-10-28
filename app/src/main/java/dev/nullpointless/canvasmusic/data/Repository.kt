@@ -145,6 +145,10 @@ object Repository {
         runCatching { api.starred().song }.onSuccess { _liked.value = it }
     }
 
+    /** Prefer Navidrome's real artist image; fall back to coverArt endpoint. */
+    fun artistArtUrl(artist: Artist, size: Int = 600): String? =
+        artist.artistImageUrl ?: api?.coverArtUrl(artist.coverArt ?: artist.id, size)
+
     fun isLiked(song: Song): Boolean {
         val l = _liked.value
         return if (l != null) l.any { it.id == song.id } else song.starred != null

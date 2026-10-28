@@ -181,7 +181,7 @@ fun SearchScreen(
                             TopResultCard(
                                 title = topArtist.name,
                                 typeLabel = "Artist",
-                                artUrl = Repository.api?.coverArtUrl(topArtist.coverArt ?: topArtist.id),
+                                artUrl = Repository.artistArtUrl(topArtist),
                                 circular = true,
                                 onClick = { onOpenArtist(topArtist.id) },
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -403,7 +403,7 @@ fun ArtistCircle(artist: Artist, onClick: () -> Unit) {
         modifier = Modifier.width(104.dp).clickable { onClick() }
     ) {
         RemoteImage(
-            url = Repository.api?.coverArtUrl(artist.coverArt ?: artist.id),
+            url = Repository.artistArtUrl(artist),
             modifier = Modifier.size(96.dp),
             shape = CircleShape
         )
