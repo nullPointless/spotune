@@ -77,7 +77,8 @@ private val fallbackGenres = listOf(
 @Composable
 fun SearchScreen(
     onOpenAlbum: (String) -> Unit,
-    onOpenArtist: (String) -> Unit
+    onOpenArtist: (String) -> Unit,
+    onOpenGenre: (String) -> Unit
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     var result by remember { mutableStateOf<SearchResult?>(null) }
@@ -141,13 +142,15 @@ fun SearchScreen(
                         GenreCard(
                             name = pair[0].value,
                             color = Color(genreColors[(pair[0].value.hashCode().let { if (it < 0) -it else it }) % genreColors.size]),
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            onClick = { onOpenGenre(pair[0].value) }
                         )
                         if (pair.size > 1) {
                             GenreCard(
                                 name = pair[1].value,
                                 color = Color(genreColors[(pair[1].value.hashCode().let { if (it < 0) -it else it } * 7 + 3) % genreColors.size]),
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                onClick = { onOpenGenre(pair[1].value) }
                             )
                         } else {
                             Spacer(Modifier.weight(1f))

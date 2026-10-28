@@ -244,7 +244,7 @@ fun MainTabs(
     Box(Modifier.fillMaxSize()) {
         when (tabIndex) {
             0 -> HomeScreen(onOpenAlbum = onOpenAlbum, onOpenArtist = onOpenArtist, onOpenPlaylist = onOpenPlaylist, onOpenLiked = onOpenLiked)
-            1 -> SearchScreen(onOpenAlbum = onOpenAlbum, onOpenArtist = onOpenArtist)
+            1 -> SearchScreen(onOpenAlbum = onOpenAlbum, onOpenArtist = onOpenArtist, onOpenGenre = onOpenGenre)
             else -> LibraryScreen(onOpenAlbum = onOpenAlbum, onOpenArtist = onOpenArtist, onOpenPlaylist = onOpenPlaylist, onOpenLiked = onOpenLiked, onOpenGenre = onOpenGenre)
         }
     }
