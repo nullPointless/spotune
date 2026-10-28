@@ -49,10 +49,17 @@ object Repository {
         appContext = context.applicationContext
         scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         scope.launch {
-            Settings.creds.collect { c ->
-                api = c?.let { SubsonicApi(it.server, it.user, it.salt, it.token) }
-                signedIn.value = c != null
-                invalidateCaches()
+            // A crash inside this collector must never kill the app process:
+            // guard it so a storage/IO failure surfaces as signed-out instead.
+            runCatching {
+                Settings.creds.collect { c ->
+                    api = c?.let { SubsonicApi(it.server, it.user, it.salt, it.token) }
+                    signedIn.value = c != null
+                    invalidateCaches()
+                }
+            }.onFailure { e ->
+                e.printStackTrace()
+                signedIn.value = false
             }
         }
     }
