@@ -158,7 +158,7 @@ fun NowPlayingScreen(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    contextTitle ?: "Canvas Music",
+                    contextTitle ?: "Spotune",
                     style = CmTypography.labelMedium.copy(fontSize = 12.sp),
                     color = White,
                     maxLines = 1,

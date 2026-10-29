@@ -177,7 +177,7 @@ class SubsonicApi(
     private val token: String
 ) {
     companion object {
-        const val CLIENT = "CanvasMusic"
+        const val CLIENT = "Spotune"
         const val VERSION = "1.16.1"
 
         fun md5Hex(s: String): String =

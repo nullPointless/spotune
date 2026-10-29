@@ -80,7 +80,7 @@ fun LoginScreen(onDone: () -> Unit) {
             modifier = Modifier.size(86.dp)
         )
         Spacer(Modifier.height(22.dp))
-        Text("Canvas Music", style = CmTypography.headlineLarge, color = White)
+        Text("Spotune", style = CmTypography.headlineLarge, color = White)
         Spacer(Modifier.height(8.dp))
         Text(
             "Sign in to your Navidrome server",
@@ -163,7 +163,7 @@ fun LoginScreen(onDone: () -> Unit) {
 
         Spacer(Modifier.height(28.dp))
         Text(
-            "Credentials never leave this device.\nCanvas Music talks to your server over the Subsonic API with salted-token authentication.",
+            "Credentials never leave this device.\nSpotune talks to your server over the Subsonic API with salted-token authentication.",
             style = CmTypography.labelSmall.copy(fontSize = 11.sp),
             color = TextTertiary,
             textAlign = TextAlign.Center

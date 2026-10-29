@@ -287,7 +287,7 @@ private fun SongRow(songs: List<Song>, onOpenAlbum: (String) -> Unit, onOpenArti
                 artUrl = Repository.api?.coverArtUrl(song.coverArt ?: song.albumId),
                 onClick = {
                     dev.nullpointless.canvasmusic.playback.PlayerConnection.playSongs(
-                        songs, songs.indexOf(song), contextName = "Canvas Music"
+                        songs, songs.indexOf(song), contextName = "Spotune"
                     )
                 }
             )
