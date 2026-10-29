@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.media3.common.Player
 import androidx.core.net.toUri
+import dev.nullpointless.canvasmusic.api.Song
 import dev.nullpointless.canvasmusic.data.Repository
 import dev.nullpointless.canvasmusic.playback.PlayerConnection
 import dev.nullpointless.canvasmusic.ui.Bg
@@ -231,7 +232,18 @@ fun NowPlayingScreen(
             }
             IconButton(onClick = {
                 scope.launch {
-                    Repository.toggleLikeId(current.mediaId)
+                    // Build a full Song from the playing item so the liked
+                    // list gets proper title/artist metadata.
+                    val song = Song(
+                        id = current.mediaId,
+                        title = current.mediaMetadata.title?.toString() ?: "",
+                        artist = current.mediaMetadata.artist?.toString(),
+                        album = current.mediaMetadata.albumTitle?.toString(),
+                        albumId = albumId,
+                        artistId = artistId,
+                        duration = ((current.mediaMetadata.durationMs ?: 0L) / 1000L)
+                    )
+                    Repository.toggleLike(song)
                     liked = Repository.isLikedId(current.mediaId)
                 }
             }) {

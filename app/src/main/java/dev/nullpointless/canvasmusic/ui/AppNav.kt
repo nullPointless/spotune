@@ -97,14 +97,21 @@ fun AppRoot() {
     val route = backStackEntry?.destination?.route
     val signedIn by Repository.signedIn.collectAsState()
 
-    LaunchedEffect(signedIn) {
+    // Key on route as well: on cold start with saved credentials, signedIn can
+    // flip to true while route is still null (NavHost hasn't set its graph yet).
+    // With only signedIn as key the effect captured a stale null route and never
+    // re-ran, stranding a signed-in user on the login screen.
+    LaunchedEffect(signedIn, route) {
         when (signedIn) {
-            false -> nav.navigate(Routes.LOGIN) {
-                popUpTo(0) { inclusive = true }
+            false -> if (route != null && route != Routes.LOGIN) {
+                nav.navigate(Routes.LOGIN) {
+                    popUpTo(0) { inclusive = true }
+                }
             }
             true -> if (route == Routes.LOGIN) {
                 nav.navigate(Routes.main()) {
                     popUpTo(Routes.LOGIN) { inclusive = true }
+                    launchSingleTop = true
                 }
             }
             null -> Unit
@@ -146,6 +153,7 @@ fun AppRoot() {
                     onDone = {
                         nav.navigate(Routes.main()) {
                             popUpTo(Routes.LOGIN) { inclusive = true }
+                            launchSingleTop = true
                         }
                     }
                 )

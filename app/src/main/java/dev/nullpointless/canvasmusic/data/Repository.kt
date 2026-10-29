@@ -56,6 +56,9 @@ object Repository {
                     api = c?.let { SubsonicApi(it.server, it.user, it.salt, it.token) }
                     signedIn.value = c != null
                     invalidateCaches()
+                    // Load the liked list eagerly so every heart/like UI in the
+                    // app reflects the server state right after sign-in.
+                    if (api != null) runCatching { refreshLiked() }
                 }
             }.onFailure { e ->
                 e.printStackTrace()
@@ -167,35 +170,40 @@ object Repository {
     }
 
     suspend fun toggleLikeId(id: String) {
-        val current = _liked.value ?: return
-        val song = current.find { it.id == id } ?: return
-        toggleLike(song)
+        // The song may not be in the liked list yet (that's the whole point of
+        // liking it) — fall through with a minimal Song instead of bailing out.
+        val song = _liked.value?.find { it.id == id }
+        toggleLike(song ?: Song(id = id))
     }
 
     /** Star/unstar an album or artist by id, keeping caches in sync. Returns the new state. */
     suspend fun toggleStarItem(id: String, starred: Boolean): Boolean {
-        val api = api ?: return false
+        val api = api ?: return starred
         val ok = runCatching {
             if (starred) api.unstar(id) else api.star(id)
         }.isSuccess
-        if (ok) {
-            albumCache[id]?.let { a -> albumCache[id] = a.copy(starred = if (starred) null else "starred") }
-            artistCache[id]?.let { a -> artistCache[id] = a.copy(starred = if (starred) null else "starred") }
-        }
-        return !starred
+        if (!ok) return starred
+        val newStarred = !starred
+        albumCache[id]?.let { a -> albumCache[id] = a.copy(starred = if (newStarred) "starred" else null) }
+        artistCache[id]?.let { a -> artistCache[id] = a.copy(starred = if (newStarred) "starred" else null) }
+        return newStarred
     }
 
     suspend fun toggleLike(song: Song) {
         val api = api ?: return
         val nowLiked = isLiked(song)
-        runCatching {
+        // Only update local state when the server accepted the star/unstar,
+        // so the heart never lies about what the server actually stored.
+        val ok = runCatching {
             if (nowLiked) api.unstar(song.id) else api.star(song.id)
-        }
-        val current = _liked.value
-        if (current != null) {
-            _liked.value = if (nowLiked) current.filterNot { it.id == song.id }
-            else current + song.copy(starred = "liked")
-        }
+        }.isSuccess
+        if (!ok) return
+        val base = _liked.value
+            ?: runCatching { api.starred().song }.getOrDefault(emptyList())
+        // Dedupe on add: if the list was just fetched fresh it may already
+        // contain this song server-side.
+        _liked.value = if (nowLiked) base.filterNot { it.id == song.id }
+        else base.filterNot { it.id == song.id } + song.copy(starred = "liked")
         albumCache[song.albumId ?: ""]?.let { cached ->
             if (cached.song.any { it.id == song.id }) {
                 albumCache[cached.id] = cached.copy(

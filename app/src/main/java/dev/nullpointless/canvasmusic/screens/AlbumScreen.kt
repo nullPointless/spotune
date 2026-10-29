@@ -199,7 +199,10 @@ fun AlbumScreen(
                                     liked = liked,
                                     onToggle = {
                                         scope.launch {
-                                            liked = Repository.toggleStarItem(album.id, album.starred != null)
+                                            // Pass the CURRENT liked state — album.starred
+                                            // is a stale snapshot from the original fetch and
+                                            // made un-liking impossible.
+                                            liked = Repository.toggleStarItem(album.id, liked)
                                         }
                                     }
                                 )
