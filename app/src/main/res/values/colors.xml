@@ -2,4 +2,7 @@
 <resources>
     <color name="splash_bg">#121212</color>
     <color name="ic_launcher_background">#1DD75F</color>
+    <color name="ic_bg_noir">#000000</color>
+    <color name="ic_bg_classic">#FFFFFF</color>
+    <color name="ic_bg_midnight">#121212</color>
 </resources>

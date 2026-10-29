@@ -16,6 +16,7 @@ object Settings {
     private val KEY_USER = stringPreferencesKey("user")
     private val KEY_SALT = stringPreferencesKey("salt")
     private val KEY_TOKEN = stringPreferencesKey("token")
+    private val KEY_ICON = stringPreferencesKey("iconVariant")
 
     data class Creds(val server: String, val user: String, val salt: String, val token: String)
 
@@ -42,5 +43,13 @@ object Settings {
 
     suspend fun clear() {
         appContext.dataStore.edit { it.clear() }
+    }
+
+    val iconVariant: Flow<String> get() = appContext.dataStore.data.map { p ->
+        p[KEY_ICON] ?: "default"
+    }
+
+    suspend fun saveIconVariant(variant: String) {
+        appContext.dataStore.edit { it[KEY_ICON] = variant }
     }
 }

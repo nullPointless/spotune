@@ -63,6 +63,7 @@ import dev.nullpointless.canvasmusic.screens.AlbumScreen
 import dev.nullpointless.canvasmusic.screens.ArtistScreen
 import dev.nullpointless.canvasmusic.screens.GenreScreen
 import dev.nullpointless.canvasmusic.screens.HomeScreen
+import dev.nullpointless.canvasmusic.screens.IconPickerScreen
 import dev.nullpointless.canvasmusic.screens.LibraryScreen
 import dev.nullpointless.canvasmusic.screens.LikedScreen
 import dev.nullpointless.canvasmusic.screens.LoginScreen
@@ -82,6 +83,7 @@ object Routes {
     const val GENRE = "genre/{name}"
     const val NOW_PLAYING = "nowplaying"
     const val QUEUE = "queue"
+    const val ICONS = "icons"
 
     fun main(tab: String = "home") = "main?tab=$tab"
     fun album(id: String) = "album/$id"
@@ -119,7 +121,7 @@ fun AppRoot() {
     }
 
     val chromeRoutes = remember {
-        setOf(Routes.MAIN_PATTERN, Routes.ALBUM, Routes.ARTIST, Routes.PLAYLIST, Routes.LIKED, Routes.GENRE, Routes.QUEUE)
+        setOf(Routes.MAIN_PATTERN, Routes.ALBUM, Routes.ARTIST, Routes.PLAYLIST, Routes.LIKED, Routes.GENRE, Routes.QUEUE, Routes.ICONS)
     }
     val showChrome = route in chromeRoutes
 
@@ -170,7 +172,8 @@ fun AppRoot() {
                     onOpenArtist = { id -> nav.navigate(Routes.artist(id)) },
                     onOpenPlaylist = { id -> nav.navigate(Routes.playlist(id)) },
                     onOpenLiked = { nav.navigate(Routes.LIKED) },
-                    onOpenGenre = { name -> nav.navigate(Routes.genre(name)) }
+                    onOpenGenre = { name -> nav.navigate(Routes.genre(name)) },
+                    onOpenIcons = { nav.navigate(Routes.ICONS) }
                 )
             }
 
@@ -231,6 +234,10 @@ fun AppRoot() {
             composable(Routes.QUEUE) {
                 QueueScreen(onBack = { nav.popBackStack() })
             }
+
+            composable(Routes.ICONS) {
+                IconPickerScreen(onBack = { nav.popBackStack() })
+            }
         }
     }
 }
@@ -242,7 +249,8 @@ fun MainTabs(
     onOpenArtist: (String) -> Unit,
     onOpenPlaylist: (String) -> Unit,
     onOpenLiked: () -> Unit,
-    onOpenGenre: (String) -> Unit
+    onOpenGenre: (String) -> Unit,
+    onOpenIcons: () -> Unit
 ) {
     val tabIndex = when (tab) {
         "search" -> 1
@@ -253,7 +261,7 @@ fun MainTabs(
         when (tabIndex) {
             0 -> HomeScreen(onOpenAlbum = onOpenAlbum, onOpenArtist = onOpenArtist, onOpenPlaylist = onOpenPlaylist, onOpenLiked = onOpenLiked)
             1 -> SearchScreen(onOpenAlbum = onOpenAlbum, onOpenArtist = onOpenArtist, onOpenGenre = onOpenGenre)
-            else -> LibraryScreen(onOpenAlbum = onOpenAlbum, onOpenArtist = onOpenArtist, onOpenPlaylist = onOpenPlaylist, onOpenLiked = onOpenLiked, onOpenGenre = onOpenGenre)
+            else -> LibraryScreen(onOpenAlbum = onOpenAlbum, onOpenArtist = onOpenArtist, onOpenPlaylist = onOpenPlaylist, onOpenLiked = onOpenLiked, onOpenGenre = onOpenGenre, onOpenIcons = onOpenIcons)
         }
     }
 }

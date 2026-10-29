@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -72,7 +73,8 @@ fun LibraryScreen(
     onOpenArtist: (String) -> Unit,
     onOpenPlaylist: (String) -> Unit,
     onOpenLiked: () -> Unit,
-    onOpenGenre: (String) -> Unit
+    onOpenGenre: (String) -> Unit,
+    onOpenIcons: () -> Unit
 ) {
     var tab by rememberSaveable { mutableStateOf(0) }
     var reloadKey by remember { mutableStateOf(0) }
@@ -125,6 +127,9 @@ fun LibraryScreen(
                     color = White,
                     modifier = Modifier.weight(1f)
                 )
+                IconButton(onClick = onOpenIcons) {
+                    Icon(Icons.Filled.Tune, contentDescription = "App icon", tint = TextSecondary)
+                }
                 IconButton(onClick = { showLogout = true }) {
                     Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Log out", tint = TextSecondary)
                 }
